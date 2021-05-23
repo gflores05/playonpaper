@@ -1,0 +1,24 @@
+repos:
+  - repo: https://github.com/pre-commit/mirrors-prettier
+    rev: "v2.2.1" # Use the sha or tag you want to point at
+    hooks:
+      - id: prettier
+        files: .(js|json|ts|css|html)$
+        # incompatible formatting with jinja expressions in html|js files
+        exclude: ^(server)
+        args:
+          - "--loglevel"
+          - "error"
+  - repo: https://github.com/psf/black
+    rev: 21.5b1
+    hooks:
+      - id: black
+  - repo: https://gitlab.com/pycqa/flake8
+    rev: 3.9.2
+    hooks:
+      - id: flake8
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v3.4.0
+    hooks:
+      - id: debug-statements
+      - id: check-merge-conflict
