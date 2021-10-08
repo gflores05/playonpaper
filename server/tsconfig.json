@@ -1,0 +1,27 @@
+{
+  "compileOnSave": false,
+  "compilerOptions": {
+    "rootDir": ".",
+    "sourceMap": true,
+    "declaration": false,
+    "moduleResolution": "node",
+    "emitDecoratorMetadata": true,
+    "experimentalDecorators": true,
+    "importHelpers": true,
+    "target": "es2020",
+    "module": "commonjs",
+    "typeRoots": ["node_modules/@types"],
+    "lib": ["es2015", "es2016"],
+    "skipLibCheck": true,
+    "skipDefaultLibCheck": true,
+    "baseUrl": ".",
+    "paths": {
+      "@covid19/*": ["src/*"]
+    },
+    "outDir": "./dist",
+    "types": ["node"],
+    "esModuleInterop": true
+  },
+  "exclude": ["node_modules", "tmp", "**/*.test.ts"],
+  "include": ["**/*.ts"]
+}
