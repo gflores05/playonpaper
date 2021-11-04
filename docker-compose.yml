@@ -2,22 +2,10 @@ version: "3.7"
 
 services:
   popdb:
-    image: postgres:11
+    image: postgres:13
     ports:
       - 5432:5432
     environment:
       POSTGRES_PASSWORD: paper
       POSTGRES_USER: paper
       POSTGRES_DB: paper
-  popserver:
-    build: ./server
-    ports:
-      - 8000:8000
-    volumes:
-      - ./server:/code/server
-    env_file:
-      - .env
-    command: uvicorn main:app --reload
-    depends_on:
-      - rtcache
-      - rtdb

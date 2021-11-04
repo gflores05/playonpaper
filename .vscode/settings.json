@@ -4,5 +4,19 @@
   "python.linting.flake8Enabled": true,
   "python.linting.enabled": true,
   "python.autoComplete.extraPaths": ["./server"],
-  "python.analysis.extraPaths": ["./server"]
+  "python.analysis.extraPaths": [
+    "./server"
+  ],
+  "sqltools.connections": [
+    {
+      "previewLimit": 50,
+      "server": "localhost",
+      "port": 5432,
+      "driver": "PostgreSQL",
+      "name": "playonpaper",
+      "database": "paper",
+      "username": "paper",
+      "password": "paper"
+    }
+  ]
 }
