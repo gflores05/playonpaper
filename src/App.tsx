@@ -1,5 +1,7 @@
 import React from 'react'
 import logo from './logo.svg'
+import { Games } from './views/Games'
+import { Game } from './views/Game'
 
 function App() {
   return (
@@ -11,6 +13,8 @@ function App() {
         <div className="max-w-md mx-auto">
           <img src={logo} alt="logo" />
         </div>
+        <Games />
+        <Game />
       </div>
     </div>
   )
