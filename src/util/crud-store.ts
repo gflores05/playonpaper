@@ -34,6 +34,11 @@ export function createBaseCRUDStore<
   get: () => CRUDStore<T, PostDto, PatchDto>,
   apiService: IApiService<T, PostDto, PatchDto>
 ): CRUDStore<T, PostDto, PatchDto> {
+  /**
+   * Updated the collection and the selected item
+   * @param item
+   * @returns
+   */
   function updateMap(item: Partial<T>) {
     const items = get().items.update(item)
 
@@ -57,7 +62,9 @@ export function createBaseCRUDStore<
     fetchOne: async (id: T['id']) => {
       const item = await apiService.get(id)
 
-      get().items.add(item)
+      const items = get().items.add(item)
+
+      set({ items })
     },
     update: async (id: T['id'], dto: PatchDto) => {
       const item = await apiService.patch(id, dto)
