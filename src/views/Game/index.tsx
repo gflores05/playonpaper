@@ -1,8 +1,22 @@
-import React, { useCallback } from 'react'
-import { useGameStore } from '../../stores'
+import React, { useCallback, useEffect } from 'react'
+import { useNavigate, useParams } from 'react-router-dom'
 import { ToastContainer, toast } from 'react-toastify'
+import { useGameStore } from '../../stores'
 
 export function Game() {
+  const { gameId } = useParams()
+  const fetchOne = useGameStore((state) => state.fetchOne)
+  const select = useGameStore((state) => state.select)
+  const navigate = useNavigate()
+
+  useEffect(() => {
+    const id = parseInt(gameId || '0')
+    console.log('id is ', id)
+    fetchOne(id)
+      .then(() => select(id))
+      .catch(() => navigate('/not-found'))
+  }, [gameId, fetchOne, select, navigate])
+
   const game = useGameStore((state) => state.current)
   const updateLocal = useGameStore((state) => state.set)
   const update = useGameStore((state) => state.update)

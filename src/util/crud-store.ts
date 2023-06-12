@@ -57,7 +57,7 @@ export function createBaseCRUDStore<
     fetchOne: async (id: T['id']) => {
       const item = await apiService.get(id)
 
-      updateMap(item)
+      get().items.add(item)
     },
     update: async (id: T['id'], dto: PatchDto) => {
       const item = await apiService.patch(id, dto)

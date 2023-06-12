@@ -18,12 +18,18 @@ export class IdentifiableMap<T extends { id: T['id'] }> extends Map<
     return new IdentifiableMap(Array.from(this.values()))
   }
 
+  add(item: T) {
+    this.set(item.id, item)
+
+    return this.recreate()
+  }
+
   update(item: Partial<T>) {
     if (!item.id) {
       throw Error('Id is required to update the item')
     }
 
-    const current = this.get(item.id)
+    let current = this.get(item.id)
 
     if (!current) {
       return this

@@ -1,9 +1,9 @@
 import React, { useEffect } from 'react'
 import { useGameStore } from '../../stores'
+import { Link } from 'react-router-dom'
 
 export function Games() {
   const games = useGameStore((state) => state.items)
-  const select = useGameStore((state) => state.select)
   const fetch = useGameStore((state) => state.fetch)
 
   useEffect(() => {
@@ -27,9 +27,7 @@ export function Games() {
             <GameTableCell>{game.name}</GameTableCell>
             <GameTableCell>{game.code}</GameTableCell>
             <GameTableCell>
-              <button onClick={() => select(game.id)} type="button">
-                View
-              </button>
+              <Link to={`/games/${game.id}`}>View</Link>
             </GameTableCell>
           </tr>
         ))}
