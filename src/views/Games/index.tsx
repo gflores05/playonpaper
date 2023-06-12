@@ -2,7 +2,7 @@ import React, { useEffect } from 'react'
 import { useGameStore } from '../../stores'
 
 export function Games() {
-  const games = useGameStore((state) => state.games)
+  const games = useGameStore((state) => state.items)
   const select = useGameStore((state) => state.select)
   const fetch = useGameStore((state) => state.fetch)
 
@@ -27,7 +27,7 @@ export function Games() {
             <GameTableCell>{game.name}</GameTableCell>
             <GameTableCell>{game.code}</GameTableCell>
             <GameTableCell>
-              <button onClick={() => select(game)} type="button">
+              <button onClick={() => select(game.id)} type="button">
                 View
               </button>
             </GameTableCell>
