@@ -3,6 +3,7 @@ import Root from './views/Root'
 import { Games } from './views/Games'
 import { Game } from './views/Game'
 import ErrorPage from './views/ErrorPage'
+import Chat from './views/Chat'
 
 const router = createBrowserRouter([
   {
@@ -17,6 +18,10 @@ const router = createBrowserRouter([
       {
         path: 'games/:gameId',
         element: <Game />
+      },
+      {
+        path: 'chat',
+        element: <Chat />
       }
     ]
   }

@@ -13,6 +13,9 @@ export default function Root() {
         </div>
         <Link className="text-white text-2xl text-center" to="games">
           Games
+        </Link>{' '}
+        <Link className="text-white text-2xl text-center" to="chat">
+          Chat
         </Link>
         <Outlet />
       </div>
