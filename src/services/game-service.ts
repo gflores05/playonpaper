@@ -1,4 +1,4 @@
-import { createBaseApiService } from './api-service'
+import { createBaseApiService } from '@play/services'
 import environment from '../environment'
 
 export interface Game {
@@ -19,9 +19,11 @@ export interface UpdateGameDto {
   configuration: { [key: string]: unknown }
 }
 
-const gameService = createBaseApiService<Game, CreateGameDto, UpdateGameDto>({
+export const gameService = createBaseApiService<
+  Game,
+  CreateGameDto,
+  UpdateGameDto
+>({
   baseUrl: environment.apiUrl,
   resource: 'games'
 })
-
-export default gameService

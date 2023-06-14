@@ -1,6 +1,6 @@
 import { create } from 'zustand'
 import { IdentifiableMap } from './identifiable-map'
-import { IApiService } from '../services/api-service'
+import { IApiService } from '@play/services'
 
 export interface CRUDStore<T extends { id: T['id'] }, PostDto, PatchDto> {
   items: IdentifiableMap<T>

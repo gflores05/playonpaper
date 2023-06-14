@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { ToastContainer, toast } from 'react-toastify'
-import { useGameStore } from '../../stores'
+import { useGameStore } from '@play/stores'
 
 export function Game() {
   const { gameId } = useParams()

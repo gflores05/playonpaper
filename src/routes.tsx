@@ -1,9 +1,9 @@
 import { createBrowserRouter } from 'react-router-dom'
-import Root from './views/Root'
-import { Games } from './views/Games'
-import { Game } from './views/Game'
-import ErrorPage from './views/ErrorPage'
-import Chat from './views/Chat'
+import Root from '@play/views/Root'
+import { Games } from '@play/views/Games'
+import { Game } from '@play/views/Game'
+import ErrorPage from '@play/views/ErrorPage'
+import Chat from '@play/views/Chat'
 
 const router = createBrowserRouter([
   {

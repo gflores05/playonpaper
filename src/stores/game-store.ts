@@ -1,4 +1,4 @@
-import { createCRUDStore } from '../util/crud-store'
-import gameService from '../services/game-service'
+import { createCRUDStore } from '@play/util'
+import { gameService } from '@play/services'
 
 export const useGameStore = createCRUDStore(gameService)

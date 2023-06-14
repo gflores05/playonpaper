@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react'
-import { useGameStore } from '../../stores'
+import { useGameStore } from '@play/stores'
 import { Link } from 'react-router-dom'
 
 export function Games() {

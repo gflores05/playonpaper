@@ -1,6 +1,6 @@
 import { create } from 'zustand'
 import { nanoid } from 'nanoid'
-import environment from '../environment'
+import environment from '@play/environment'
 
 type SendMessageDto = {
   recipient: string

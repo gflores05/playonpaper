@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react'
-import { useChatStore } from '../../stores/chat-store'
+import { useChatStore } from '@play/stores'
 
 export default function Chat() {
   const messages = useChatStore((state) => state.messages)
