@@ -1,10 +1,15 @@
-import React, { useEffect } from 'react'
-import { useGameStore } from '@play/stores'
+import React, { useContext, useEffect } from 'react'
 import { Link } from 'react-router-dom'
+import pick from 'lodash/pick'
+import { ContainerContext } from '@play/context'
 
 export function Games() {
-  const games = useGameStore((state) => state.items)
-  const fetch = useGameStore((state) => state.fetch)
+  const container = useContext(ContainerContext)
+  const useGameStore = container.resolve('useGameStore')
+
+  const { items: games, fetch } = useGameStore((state) =>
+    pick(state, 'items', 'fetch')
+  )
 
   useEffect(() => {
     fetch().then()

@@ -1,5 +1,5 @@
-import { createBaseApiService } from '@play/services'
-import environment from '../environment'
+import { Dependencies } from '@play/container'
+import { IApiService, createBaseApiService } from '@play/services'
 
 export interface Game {
   id: number
@@ -19,11 +19,11 @@ export interface UpdateGameDto {
   configuration: { [key: string]: unknown }
 }
 
-export const gameService = createBaseApiService<
-  Game,
-  CreateGameDto,
-  UpdateGameDto
->({
-  baseUrl: environment.apiUrl,
-  resource: 'games'
-})
+export interface IGameService
+  extends IApiService<Game, CreateGameDto, UpdateGameDto> {}
+
+export const createGameService = ({ apiUrl }: Dependencies): IGameService =>
+  createBaseApiService<Game, CreateGameDto, UpdateGameDto>({
+    baseUrl: apiUrl,
+    resource: 'games'
+  })

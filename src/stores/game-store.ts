@@ -1,4 +1,12 @@
-import { createCRUDStore } from '@play/util'
-import { gameService } from '@play/services'
+import { StoreApi, UseBoundStore } from 'zustand'
+import { Dependencies } from '@play/container'
+import { CreateGameDto, Game, UpdateGameDto } from '@play/services'
+import { CRUDStore, createCRUDStore } from '@play/util'
 
-export const useGameStore = createCRUDStore(gameService)
+export interface IGameStore
+  extends UseBoundStore<
+    StoreApi<CRUDStore<Game, CreateGameDto, UpdateGameDto>>
+  > {}
+
+export const createGameStore = ({ gameService }: Dependencies) =>
+  createCRUDStore(gameService)

@@ -1,6 +1,6 @@
-import { create } from 'zustand'
+import { StoreApi, UseBoundStore, create } from 'zustand'
 import { nanoid } from 'nanoid'
-import environment from '@play/environment'
+import { Dependencies } from '@play/container'
 
 type SendMessageDto = {
   recipient: string
@@ -26,43 +26,44 @@ interface ChatStore {
   receiveMessage: (message: ReceiveMessageDto) => void
 }
 
-export const useChatStore = create<ChatStore>()((set, get) => ({
-  clientId: nanoid(),
-  messages: {},
-  connect: async () => {
-    const connection = new WebSocket(
-      `${environment.wsUrl}/chat/${get().clientId}`
-    )
+export interface IChatBoundedStore extends UseBoundStore<StoreApi<ChatStore>> {}
 
-    connection.onmessage = (evt) => {
-      const message: ReceiveMessageDto = JSON.parse(evt.data)
+export const createChatStore = ({ wsUrl }: Dependencies) =>
+  create<ChatStore>()((set, get) => ({
+    clientId: nanoid(),
+    messages: {},
+    connect: async () => {
+      const connection = new WebSocket(`${wsUrl}/chat/${get().clientId}`)
 
-      get().receiveMessage(message)
+      connection.onmessage = (evt) => {
+        const message: ReceiveMessageDto = JSON.parse(evt.data)
+
+        get().receiveMessage(message)
+      }
+
+      set({ connection })
+    },
+    sendMessage: (message: SendMessageDto) => {
+      get().connection?.send(JSON.stringify(message))
+      const messages = get().messages
+
+      const msg = { sender: get().clientId, content: message.content }
+
+      if (messages[message.recipient]) {
+        messages[message.recipient].push(msg)
+      } else {
+        messages[message.recipient] = [msg]
+      }
+    },
+    receiveMessage: (message: ReceiveMessageDto) => {
+      const messages = get().messages
+
+      if (messages[message.sender]) {
+        messages[message.sender].push(message)
+      } else {
+        messages[message.sender] = [message]
+      }
+
+      set({ messages: { ...messages } })
     }
-
-    set({ connection })
-  },
-  sendMessage: (message: SendMessageDto) => {
-    get().connection?.send(JSON.stringify(message))
-    const messages = get().messages
-
-    const msg = { sender: get().clientId, content: message.content }
-
-    if (messages[message.recipient]) {
-      messages[message.recipient].push(msg)
-    } else {
-      messages[message.recipient] = [msg]
-    }
-  },
-  receiveMessage: (message: ReceiveMessageDto) => {
-    const messages = get().messages
-
-    if (messages[message.sender]) {
-      messages[message.sender].push(message)
-    } else {
-      messages[message.sender] = [message]
-    }
-
-    set({ messages: { ...messages } })
-  }
-}))
+  }))

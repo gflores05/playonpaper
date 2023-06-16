@@ -1,11 +1,16 @@
-import { useCallback, useEffect, useState } from 'react'
-import { useChatStore } from '@play/stores'
+import { useCallback, useContext, useEffect, useState } from 'react'
+import { shallow } from 'zustand/shallow'
+import pick from 'lodash/pick'
+import { ContainerContext } from '@play/context'
 
 export default function Chat() {
-  const messages = useChatStore((state) => state.messages)
-  const connect = useChatStore((state) => state.connect)
-  const sendMessage = useChatStore((state) => state.sendMessage)
-  const clientId = useChatStore((state) => state.clientId)
+  const container = useContext(ContainerContext)
+  const useChatStore = container.resolve('useChatStore')
+
+  const { clientId, messages, connect, sendMessage } = useChatStore(
+    (state) => pick(state, 'clientId', 'messages', 'connect', 'sendMessage'),
+    shallow
+  )
   const [recipient, setRecipient] = useState('')
   const [message, setMessage] = useState('')
 

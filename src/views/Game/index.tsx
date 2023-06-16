@@ -1,12 +1,19 @@
-import React, { useCallback, useEffect } from 'react'
+import React, { useCallback, useContext, useEffect } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { ToastContainer, toast } from 'react-toastify'
-import { useGameStore } from '@play/stores'
+import { shallow } from 'zustand/shallow'
+import pick from 'lodash/pick'
+import { ContainerContext } from '@play/context'
 
 export function Game() {
   const { gameId } = useParams()
-  const fetchOne = useGameStore((state) => state.fetchOne)
-  const select = useGameStore((state) => state.select)
+  const container = useContext(ContainerContext)
+  const useGameStore = container.resolve('useGameStore')
+
+  const { fetchOne, select } = useGameStore(
+    (state) => pick(state, 'fetchOne', 'select'),
+    shallow
+  )
   const navigate = useNavigate()
 
   useEffect(() => {
