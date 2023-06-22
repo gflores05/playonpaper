@@ -1,9 +1,11 @@
-import React, { useCallback, useContext, useEffect } from 'react'
+import React, { useCallback, useContext } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { ToastContainer, toast } from 'react-toastify'
 import { shallow } from 'zustand/shallow'
 import pick from 'lodash/pick'
+import useSwr from 'swr'
 import { ContainerContext } from '@play/context'
+import { ErrorState } from '@play/components'
 
 export function Game() {
   const { gameId } = useParams()
@@ -16,13 +18,21 @@ export function Game() {
   )
   const navigate = useNavigate()
 
-  useEffect(() => {
+  const { error, isLoading } = useSwr(`/game${gameId}`, async () => {
     const id = parseInt(gameId || '0')
-    console.log('id is ', id)
-    fetchOne(id)
-      .then(() => select(id))
-      .catch(() => navigate('/not-found'))
-  }, [gameId, fetchOne, select, navigate])
+
+    try {
+      await fetchOne(id)
+      select(id)
+    } catch (error) {
+      if (
+        (error as { response: { status: number } }).response?.status === 404
+      ) {
+        return navigate('/not-found')
+      }
+      throw error
+    }
+  })
 
   const game = useGameStore((state) => state.current)
   const updateLocal = useGameStore((state) => state.set)
@@ -41,6 +51,18 @@ export function Game() {
       toast('Game saved!', { type: 'success' })
     }
   }, [update, game])
+
+  if (error) {
+    return (
+      <ErrorState>
+        An error has occurred fetching the data: {error.message}
+      </ErrorState>
+    )
+  }
+
+  if (isLoading) {
+    return <h1 className="text-white text-2xl">Loading...</h1>
+  }
 
   return game ? (
     <>

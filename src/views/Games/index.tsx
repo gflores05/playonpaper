@@ -1,7 +1,9 @@
-import React, { useContext, useEffect } from 'react'
+import React, { useContext } from 'react'
 import { Link } from 'react-router-dom'
 import pick from 'lodash/pick'
+import useSwr from 'swr'
 import { ContainerContext } from '@play/context'
+import { ErrorState } from '@play/components'
 
 export function Games() {
   const container = useContext(ContainerContext)
@@ -11,9 +13,19 @@ export function Games() {
     pick(state, 'items', 'fetch')
   )
 
-  useEffect(() => {
-    fetch().then()
-  }, [fetch])
+  const { error, isLoading } = useSwr('/games', fetch)
+
+  if (error) {
+    return (
+      <ErrorState>
+        An error has occurred fetching the data: {error.message}
+      </ErrorState>
+    )
+  }
+
+  if (isLoading) {
+    return <h1 className="text-white text-2xl">Loading...</h1>
+  }
 
   return (
     <table className="w-full border-collapse border border-slate-400">
