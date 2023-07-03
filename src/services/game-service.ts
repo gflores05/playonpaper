@@ -1,29 +1,29 @@
 import { Dependencies } from '@play/container'
 import { IApiService, createBaseApiService } from '@play/services'
 
-export interface Game {
+export interface GameDto {
   id: number
   name: string
-  code: string
+  slug: string
   configuration: { [key: string]: unknown }
 }
 
-export interface CreateGameDto {
+export interface CreateGameRequest {
   name: string
   code: string
   configuration: { [key: string]: unknown }
 }
 
-export interface UpdateGameDto {
+export interface UpdateGameRequest {
   name: string
   configuration: { [key: string]: unknown }
 }
 
 export interface IGameService
-  extends IApiService<Game, CreateGameDto, UpdateGameDto> {}
+  extends IApiService<GameDto, CreateGameRequest, UpdateGameRequest> {}
 
 export const createGameService = ({ apiUrl }: Dependencies): IGameService =>
-  createBaseApiService<Game, CreateGameDto, UpdateGameDto>({
+  createBaseApiService<GameDto, CreateGameRequest, UpdateGameRequest>({
     baseUrl: apiUrl,
     resource: 'games'
   })

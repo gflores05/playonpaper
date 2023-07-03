@@ -6,7 +6,7 @@ export interface CRUDStore<T extends { id: T['id'] }, PostDto, PatchDto> {
   items: IdentifiableMap<T>
   current?: T
   select: (id: T['id']) => void
-  fetch: () => Promise<void>
+  fetch: (params?: Record<string, any>) => Promise<T[]>
   fetchOne: (id: T['id']) => Promise<void>
   update: (id: T['id'], dto: PatchDto) => Promise<void>
   delete: (id: T['id']) => Promise<void>
@@ -17,6 +17,7 @@ export interface CRUDStore<T extends { id: T['id'] }, PostDto, PatchDto> {
 
 export function createBaseCRUDStore<
   T extends { id: T['id'] },
+  GetDto extends { id: GetDto['id'] },
   PostDto,
   PatchDto
 >(
@@ -32,7 +33,8 @@ export function createBaseCRUDStore<
     replace?: boolean | undefined
   ) => void,
   get: () => CRUDStore<T, PostDto, PatchDto>,
-  apiService: IApiService<T, PostDto, PatchDto>
+  apiService: IApiService<GetDto, PostDto, PatchDto>,
+  map: (dto: GetDto) => T
 ): CRUDStore<T, PostDto, PatchDto> {
   /**
    * Updated the collection and the selected item
@@ -53,23 +55,26 @@ export function createBaseCRUDStore<
 
   return {
     items: new IdentifiableMap<T>([]),
-    fetch: async () => {
-      const data = await apiService.getAll()
+    fetch: async (params?: Record<string, any>) => {
+      const data = await apiService.getAll(params)
+      const result = data.map(map)
 
-      set({ items: new IdentifiableMap(data) })
+      set({ items: new IdentifiableMap(result) })
+
+      return result
     },
     select: (id: T['id']) => set({ current: get().items.get(id) }),
     fetchOne: async (id: T['id']) => {
       const item = await apiService.get(id)
 
-      const items = get().items.add(item)
+      const items = get().items.add(map(item))
 
       set({ items })
     },
     update: async (id: T['id'], dto: PatchDto) => {
       const item = await apiService.patch(id, dto)
 
-      updateMap(item)
+      updateMap(map(item))
     },
     delete: async (id: T['id']) => {
       const items = get().items.remove(id)
@@ -79,7 +84,7 @@ export function createBaseCRUDStore<
     add: async (dto: PostDto) => {
       const item = await apiService.post(dto)
 
-      updateMap(item)
+      updateMap(map(item))
     },
     set: updateMap,
     remove: (id: T['id']) => {
@@ -101,10 +106,13 @@ export function createBaseCRUDStore<
   }
 }
 
-export function createCRUDStore<T extends { id: T['id'] }, PostDto, PatchDto>(
-  apiService: IApiService<T, PostDto, PatchDto>
-) {
+export function createCRUDStore<
+  T extends { id: T['id'] },
+  GetDto extends { id: GetDto['id'] },
+  PostDto,
+  PatchDto
+>(apiService: IApiService<GetDto, PostDto, PatchDto>, map: (dto: GetDto) => T) {
   return create<CRUDStore<T, PostDto, PatchDto>>()((set, get) =>
-    createBaseCRUDStore(set, get, apiService)
+    createBaseCRUDStore(set, get, apiService, map)
   )
 }

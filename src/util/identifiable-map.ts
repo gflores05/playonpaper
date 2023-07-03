@@ -78,4 +78,11 @@ export class IdentifiableMap<T extends { id: T['id'] }> extends Map<
 
     return newInstance
   }
+
+  first(): T | undefined {
+    for (const val of this.values()) {
+      return val
+    }
+    return undefined
+  }
 }

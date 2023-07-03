@@ -1,9 +1,10 @@
 import { createBrowserRouter } from 'react-router-dom'
 import Root from '@play/views/Root'
-import { Games } from '@play/views/Games'
-import { Game } from '@play/views/Game'
+import { Games } from '@play/games'
 import ErrorPage from '@play/views/ErrorPage'
 import Chat from '@play/views/Chat'
+import { StartGame } from './games/StartGame'
+import { Match } from './games/tictactoe/Match'
 
 const router = createBrowserRouter([
   {
@@ -16,8 +17,12 @@ const router = createBrowserRouter([
         element: <Games />
       },
       {
-        path: 'games/:gameId',
-        element: <Game />
+        path: 'games/new/:slug',
+        element: <StartGame />
+      },
+      {
+        path: 'tic-tac-toe/:code',
+        element: <Match />
       },
       {
         path: 'chat',

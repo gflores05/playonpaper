@@ -5,40 +5,49 @@ type APIOptions = {
   resource: string
 }
 
-export interface IApiService<T extends { id: T['id'] }, PostDto, PatchDto> {
-  get: (id: T['id']) => Promise<T>
-  getAll: () => Promise<T[]>
-  post: (postDto: PostDto) => Promise<T>
-  patch: (id: T['id'], patchDto: PatchDto) => Promise<T>
+export interface IApiService<
+  GetDto extends { id: GetDto['id'] },
+  PostDto,
+  PatchDto
+> {
+  get: (id: GetDto['id']) => Promise<GetDto>
+  getAll: (params?: Record<string, any>) => Promise<GetDto[]>
+  post: (postDto: PostDto) => Promise<GetDto>
+  patch: (id: GetDto['id'], patchDto: PatchDto) => Promise<GetDto>
 }
 
 export function createBaseApiService<
-  T extends { id: T['id'] },
+  GetDto extends { id: GetDto['id'] },
   PostDto,
   PatchDto
->(opts: APIOptions): IApiService<T, PostDto, PatchDto> {
+>(opts: APIOptions): IApiService<GetDto, PostDto, PatchDto> {
   const apiClient = axios.create({ baseURL: opts.baseUrl })
 
-  async function getAll() {
-    const response = await apiClient.get<T[]>(`${opts.resource}/`)
+  async function getAll(params?: Record<string, any>) {
+    const query = params ? new URLSearchParams(params).toString() : ''
+
+    const response = await apiClient.get<GetDto[]>(`${opts.resource}/?${query}`)
 
     return response.data
   }
 
-  async function get(id: T['id']) {
-    const response = await apiClient.get<T>(`/${opts.resource}/${id}`)
+  async function get(id: GetDto['id']) {
+    const response = await apiClient.get<GetDto>(`/${opts.resource}/${id}`)
 
     return response.data
   }
 
   async function post(data: PostDto) {
-    const response = await apiClient.post<T>(opts.resource, data)
+    const response = await apiClient.post<GetDto>(opts.resource, data)
 
     return response.data
   }
 
-  async function patch(id: T['id'], data: PatchDto) {
-    const response = await apiClient.patch<T>(`/${opts.resource}/${id}`, data)
+  async function patch(id: GetDto['id'], data: PatchDto) {
+    const response = await apiClient.patch<GetDto>(
+      `/${opts.resource}/${id}`,
+      data
+    )
 
     return response.data
   }
