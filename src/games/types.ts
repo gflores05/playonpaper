@@ -12,7 +12,9 @@ export enum MatchStatus {
   FINISHED
 }
 
-export interface IMatchState {}
+export interface IMatchState {
+  winner?: string
+}
 
 export interface IPlayerState {}
 

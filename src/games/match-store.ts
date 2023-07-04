@@ -36,14 +36,18 @@ export interface MatchStore<MS extends IMatchState, PS extends IPlayerState> {
   match: Match<MS, PS>
   player: MatchPlayer<PS>
   websocket?: WebSocket
-  subscribe: (code: string) => Promise<MatchSubscription<MS, PS>>
+  subscribe: (code: string) => Promise<MatchSubscription<MS>>
   create: (
     gameId: number,
     state: MS,
     challenger: MatchPlayer<PS>
   ) => Promise<Match<MS, PS>>
   update: (playerState: Partial<PS>, newState: Partial<MS>) => Promise<void>
-  join: (code: string, player: MatchPlayer<PS>) => Promise<Match<MS, PS>>
+  join: (
+    code: string,
+    matchState: MS,
+    player: MatchPlayer<PS>
+  ) => Promise<Match<MS, PS>>
 }
 
 export const createMatchStore = <
@@ -74,28 +78,25 @@ export const createMatchStore = <
       return result
     },
     async subscribe(code: string) {
-      let match: Match<MS, PS>
+      const fetched = await matchService.get<MS, PS>(code)
 
-      if (get().match.id === 0) {
-        const fetched = await matchService.get<MS, PS>(code)
+      const match = mapMatch(fetched)
 
-        match = mapMatch(fetched)
+      set({
+        match
+      })
 
-        set({
-          match
-        })
-      } else {
-        match = get().match
-      }
-
-      const subscriptions = matchService.connect<MS, PS>(
+      const subscriptions = matchService.connect<MS>(
         match.code,
         get().player.name
       )
 
       subscriptions.matchUpdates$.pipe(
         distinct(),
-        tap((match) => set({ match: mapMatch(match) }))
+        tap((match) => {
+          console.log('updating state')
+          set({ match: { ...get().match, state: match.state } })
+        })
       )
 
       return subscriptions
@@ -116,10 +117,10 @@ export const createMatchStore = <
 
       set({ match: { ...match, state: updated.state } })
     },
-    async join(code, player: MatchPlayer<PS>) {
+    async join(code, matchState: MS, player: MatchPlayer<PS>) {
       const updated = await matchService.update<MS, PS>(code, {
         player,
-        state: {},
+        state: matchState,
         event: MatchUpdateEvent.PLAYER_JOIN
       })
 

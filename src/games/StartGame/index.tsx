@@ -29,8 +29,13 @@ export function StartGame() {
 
   // Get the MatchVM
   const pascalGame = slugToPascal(slug || '')
-  const { useMatchStore, getInitialMatchState, getInitialPlayerState } =
-    container.resolve<IMatchViewModel>(`create${pascalGame}VM`)
+  const {
+    useMatchStore,
+    getInitialMatchState,
+    getInitialPlayerState,
+    getJoinState,
+    getJoinPlayerState
+  } = container.resolve<IMatchViewModel>(`create${pascalGame}VM`)
 
   // Navigation
   const navigate = useNavigate()
@@ -50,9 +55,9 @@ export function StartGame() {
   }
 
   const joinGame = async (data: JoinGameFormValues) => {
-    const match = await join(data.code, {
+    const match = await join(data.code, getJoinState(data.name), {
       name: data.name,
-      state: getInitialPlayerState()
+      state: getJoinPlayerState(data.name)
     })
 
     navigate(`/${slug}/${match.code}`)

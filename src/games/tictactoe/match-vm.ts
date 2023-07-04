@@ -8,6 +8,11 @@ export function createTicTacToeMatchVM({
   return {
     useMatchStore: useTicTacToeMatchStore,
     getInitialMatchState: () => TicTacToeMatchState.none(),
-    getInitialPlayerState: () => TicTacToePlayerState.none()
+    getInitialPlayerState: () => TicTacToePlayerState.none(),
+    getJoinState: (player: string) => ({ currentPlayer: player }),
+    getJoinPlayerState: (player: string) => ({
+      ...TicTacToePlayerState.none(),
+      token: '0'
+    })
   }
 }

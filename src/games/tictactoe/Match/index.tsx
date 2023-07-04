@@ -4,10 +4,10 @@ import { toast } from 'react-toastify'
 import { Subject } from 'rxjs'
 import useSwr from 'swr'
 import { ContainerContext } from '@play/context'
-import { Container, ErrorState, LoadingState } from '@play/components'
+import { Container, ErrorState, LoadingState, Title } from '@play/components'
 import { TicTacToeBoard } from '../Board'
-import { TicTacToeMatchState, TicTacToePlayerState } from '../types'
-import { MatchResponse } from '@play/games/match-service'
+import { TicTacToeMatchState } from '../types'
+import { UpdateMatchResponse } from '@play/games/match-service'
 
 export function Match() {
   const container = useContext(ContainerContext)
@@ -17,10 +17,11 @@ export function Match() {
   const [playerJoin, setPlayerJoin] = useState<Subject<string>>(new Subject())
   const [playerLeft, setPlayerLeft] = useState<Subject<string>>(new Subject())
   const [matchUpdates, setMatchUpdate] = useState<
-    Subject<MatchResponse<TicTacToeMatchState, TicTacToePlayerState>>
+    Subject<UpdateMatchResponse<TicTacToeMatchState>>
   >(new Subject())
 
   const subscribe = useMatchStore((state) => state.subscribe)
+  const match = useMatchStore((state) => state.match)
 
   const init = async () => {
     const { playerJoin$, playerLeft$, matchUpdates$ } = await subscribe(
@@ -64,6 +65,14 @@ export function Match() {
 
   return (
     <Container>
+      <Title>
+        {match.state.currentPlayer
+          ? `Is the turn of ${match.state.currentPlayer}`
+          : 'Waiting for the other player to join'}
+      </Title>
+      {match.state.winner && (
+        <Title type="t2">The winner is {match.state.winner}</Title>
+      )}
       <TicTacToeBoard />
     </Container>
   )

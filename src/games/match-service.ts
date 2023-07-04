@@ -49,19 +49,24 @@ interface UpdateMatchRequest<MS, PS> {
   state: Partial<MS>
 }
 
-interface UpdateMatchResponse<MS> {
+export interface UpdateMatchResponse<MS> {
   code: string
   pmp: string
   state: MS
 }
 
-interface WebSocketMessage {
+interface WebSocketMessageContent {
   event: MatchUpdateEvent
-  content: unknown
+  data: unknown
 }
 
-export interface MatchSubscription<MS, PS> {
-  matchUpdates$: Subject<MatchResponse<MS, PS>>
+interface WebSocketMessage {
+  sender: string
+  content: WebSocketMessageContent
+}
+
+export interface MatchSubscription<MS> {
+  matchUpdates$: Subject<UpdateMatchResponse<MS>>
   playerJoin$: Subject<string>
   playerLeft$: Subject<string>
 }
@@ -75,7 +80,7 @@ export interface IMatchService {
     code: string,
     request: UpdateMatchRequest<MS, PS>
   ) => Promise<UpdateMatchResponse<MS>>
-  connect: <MS, PS>(code: string, player: string) => MatchSubscription<MS, PS>
+  connect: <MS>(code: string, player: string) => MatchSubscription<MS>
 }
 
 export function createMatchService({
@@ -113,25 +118,25 @@ export function createMatchService({
     return response.data
   }
 
-  function connect<MS, PS>(code: string, player: string) {
+  function connect<MS>(code: string, player: string) {
     const websocket = new WebSocket(`${wsUrl}/match/${code}/${player}`)
 
-    const matchUpdates$ = new Subject<MatchResponse<MS, PS>>()
+    const matchUpdates$ = new Subject<UpdateMatchResponse<MS>>()
     const playerJoin$ = new Subject<string>()
     const playerLeft$ = new Subject<string>()
 
     websocket.onmessage = (evt) => {
       const message: WebSocketMessage = JSON.parse(evt.data)
 
-      switch (message.event) {
+      switch (message.content.event) {
         case MatchUpdateEvent.STATE_UPDATE:
-          matchUpdates$.next(message.content as MatchResponse<MS, PS>)
+          matchUpdates$.next(message.content.data as UpdateMatchResponse<MS>)
           break
         case MatchUpdateEvent.PLAYER_JOIN:
-          playerJoin$.next(message.content as string)
+          playerJoin$.next(message.sender)
           break
         case MatchUpdateEvent.PLAYER_LEFT:
-          playerLeft$.next(message.content as string)
+          playerLeft$.next(message.sender)
           break
         default:
           break
