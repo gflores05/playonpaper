@@ -9,11 +9,7 @@ import {
   IPlayerState
 } from './types'
 import { Dependencies } from '@play/container'
-import {
-  MatchResponse,
-  MatchSubscription,
-  MatchUpdateEvent
-} from './match-service'
+import { MatchResponse, MatchSubscription } from './match-service'
 
 function mapMatch<MS extends IMatchState, PS extends IPlayerState>(
   match: MatchResponse<MS, PS>
@@ -32,107 +28,104 @@ export interface IMatchBoundedStore<
   PS extends IPlayerState
 > extends UseBoundStore<StoreApi<MatchStore<MS, PS>>> {}
 
-export interface MatchStore<MS extends IMatchState, PS extends IPlayerState> {
+export interface MatchStore<
+  MS extends IMatchState = IMatchState,
+  PS extends IPlayerState = IPlayerState
+> {
   match: Match<MS, PS>
   player: MatchPlayer<PS>
-  websocket?: WebSocket
-  subscribe: (code: string) => Promise<MatchSubscription<MS>>
-  create: (
-    gameId: number,
-    state: MS,
-    challenger: MatchPlayer<PS>
-  ) => Promise<Match<MS, PS>>
-  update: (playerState: Partial<PS>, newState: Partial<MS>) => Promise<void>
-  join: (
-    code: string,
-    matchState: MS,
-    player: MatchPlayer<PS>
-  ) => Promise<Match<MS, PS>>
+  subscribe: (code: string) => Promise<MatchSubscription<MS, PS>>
+  create: (gameId: number, state: MS) => Promise<Match<MS, PS>>
+  update: (
+    status: MatchStatus,
+    playerState: Partial<PS>,
+    newState: Partial<MS>
+  ) => Promise<void>
+  join: (code: string, player: MatchPlayer<PS>) => Promise<Match<MS, PS>>
 }
 
 export const createMatchStore = <
-  MS extends IMatchState,
-  PS extends IPlayerState
+  MS extends IMatchState = IMatchState,
+  PS extends IPlayerState = IPlayerState
 >({
-  matchService
-}: Dependencies) =>
-  create<MatchStore<MS, PS>>()((set, get) => ({
+  matchApiServiceFactory
+}: Dependencies) => {
+  const matchService = matchApiServiceFactory<MS, PS>()
+
+  return create<MatchStore<MS, PS>>()((set, get) => ({
     match: Match.none<MS, PS>(),
     player: MatchPlayer.none<PS>(),
-    async create(gameId: number, state: MS, challenger: MatchPlayer<PS>) {
+    async create(gameId: number, state: MS) {
       const matchCreated = await matchService.create({
         game_id: gameId,
-        challenger,
         state
       })
 
-      const match = await matchService.get<MS, PS>(matchCreated.code)
-
-      const result = mapMatch(match)
-
-      set({
-        player: { ...challenger, pmp: matchCreated.pmp },
-        match: result
-      })
-
-      return result
-    },
-    async subscribe(code: string) {
-      const fetched = await matchService.get<MS, PS>(code)
-
-      const match = mapMatch(fetched)
+      const match = mapMatch(matchCreated)
 
       set({
         match
       })
 
-      const subscriptions = matchService.connect<MS>(
-        match.code,
-        get().player.name
-      )
+      return match
+    },
+    async join(code, player: MatchPlayer<PS>) {
+      const joinResult = await matchService.join(code, {
+        player
+      })
+
+      const result = await matchService.getAll({ code })
+
+      const match = mapMatch(result[0])
+
+      set({
+        match: { ...get().match, ...match },
+        player: { ...player, pmp: joinResult.pmp }
+      })
+
+      return match
+    },
+    async subscribe(code: string) {
+      const fetched = await matchService.getAll({ code })
+
+      const match = mapMatch(fetched[0])
+
+      set({
+        match
+      })
+
+      const subscriptions = matchService.connect(match.code, get().player.name)
 
       subscriptions.matchUpdates$.pipe(
         distinct(),
-        tap((match) => {
+        tap((updates) => {
           console.log('updating state')
-          set({ match: { ...get().match, state: match.state } })
+          const match = mapMatch(updates)
+          set({ match })
         })
       )
 
       return subscriptions
     },
-    async update(playerState: Partial<PS>, newState: Partial<MS>) {
+    async update(
+      status: MatchStatus,
+      playerState: Partial<PS>,
+      newState: Partial<MS>
+    ) {
       const player = {
         ...get().player,
         state: { ...get().player.state, ...playerState }
       }
+
       const match = get().match
-      const matchState = { ...match.state, ...newState }
 
-      const updated = await matchService.update<MS, PS>(match.code, {
+      const updated = await matchService.update(get().match.id, {
+        status,
         player,
-        state: matchState,
-        event: MatchUpdateEvent.STATE_UPDATE
+        state: newState
       })
 
-      set({ match: { ...match, state: updated.state } })
-    },
-    async join(code, matchState: MS, player: MatchPlayer<PS>) {
-      const updated = await matchService.update<MS, PS>(code, {
-        player,
-        state: matchState,
-        event: MatchUpdateEvent.PLAYER_JOIN
-      })
-
-      const result = await matchService.get<MS, PS>(code)
-
-      const match = mapMatch(result)
-
-      set({
-        match: { ...get().match, ...match },
-        player: { ...player, pmp: updated.pmp }
-      })
-
-      return match
+      set({ match: { ...match, ...updated } })
     }
   }))
+}

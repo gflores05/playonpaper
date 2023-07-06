@@ -3,30 +3,43 @@ import { useParams } from 'react-router-dom'
 import { toast } from 'react-toastify'
 import { Subject } from 'rxjs'
 import useSwr from 'swr'
+import _ from 'lodash'
 import { ContainerContext } from '@play/context'
 import { Container, ErrorState, LoadingState, Title } from '@play/components'
 import { TicTacToeBoard } from '../Board'
-import { TicTacToeMatchState } from '../types'
-import { UpdateMatchResponse } from '@play/games/match-service'
+import { TicTacToeMatchState, TicTacToePlayerState } from '../types'
+import { MatchResponse } from '@play/games'
 
 export function Match() {
   const container = useContext(ContainerContext)
+
   const useMatchStore = container.resolve('useTicTacToeMatchStore')
   const { code } = useParams()
 
   const [playerJoin, setPlayerJoin] = useState<Subject<string>>(new Subject())
   const [playerLeft, setPlayerLeft] = useState<Subject<string>>(new Subject())
   const [matchUpdates, setMatchUpdate] = useState<
-    Subject<UpdateMatchResponse<TicTacToeMatchState>>
+    Subject<MatchResponse<TicTacToeMatchState, TicTacToePlayerState>>
   >(new Subject())
 
   const subscribe = useMatchStore((state) => state.subscribe)
   const match = useMatchStore((state) => state.match)
+  const [currentPlayer, setCurrentPlayer] = useState(
+    match.state.currentPlayer ||
+      _(match.players)
+        .pickBy((val) => val.state.token === 'X')
+        .keys()
+        .first()
+  )
 
   const init = async () => {
     const { playerJoin$, playerLeft$, matchUpdates$ } = await subscribe(
       code || ''
     )
+
+    matchUpdates$.subscribe((updates) => {
+      setCurrentPlayer(updates.state.currentPlayer)
+    })
 
     playerJoin$.subscribe((player) => {
       toast(`${player} has joined the game!`, { type: 'info' })
@@ -66,8 +79,8 @@ export function Match() {
   return (
     <Container>
       <Title>
-        {match.state.currentPlayer
-          ? `Is the turn of ${match.state.currentPlayer}`
+        {currentPlayer
+          ? `Is the turn of ${currentPlayer}`
           : 'Waiting for the other player to join'}
       </Title>
       {match.state.winner && (

@@ -8,6 +8,5 @@ export interface IMatchViewModel<
   useMatchStore: IMatchBoundedStore<MS, PS>
   getInitialMatchState: () => MS
   getInitialPlayerState: () => PS
-  getJoinState: (player: string) => Partial<MS>
-  getJoinPlayerState: (player: string) => PS
+  getJoinPlayerState: () => PS
 }

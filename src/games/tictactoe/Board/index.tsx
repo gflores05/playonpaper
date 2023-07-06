@@ -1,5 +1,5 @@
 import { useContext } from 'react'
-import { every, pick } from 'lodash'
+import _, { every, pick } from 'lodash'
 import cx from 'classnames'
 import { ContainerContext } from '@play/context'
 
@@ -65,8 +65,18 @@ export function TicTacToeBoard() {
   const { update, match, player } = useMatchStore((state) =>
     pick(state, 'update', 'match', 'player')
   )
+  const getCurrentPlayer = () => {
+    return (
+      match.state.currentPlayer ||
+      _(match.players)
+        .pickBy((val) => val.state.token === 'X')
+        .keys()
+        .first()
+    )
+  }
   const onMark = async (x: number, y: number) => {
-    if (match.state.currentPlayer === player.name && !match.state.winner) {
+    const currPlayer = getCurrentPlayer()
+    if (currPlayer === player.name && !match.state.winner) {
       const board = [...match.state.board]
       if (board[x][y] === null) {
         board[x][y] = player.state.token
@@ -77,6 +87,7 @@ export function TicTacToeBoard() {
           (pname) => pname !== player.name
         )
         await update(
+          match.status,
           { markedCells: [...player.state.markedCells, [x, y]] },
           { currentPlayer, board, winner }
         )

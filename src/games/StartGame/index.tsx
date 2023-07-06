@@ -33,7 +33,6 @@ export function StartGame() {
     useMatchStore,
     getInitialMatchState,
     getInitialPlayerState,
-    getJoinState,
     getJoinPlayerState
   } = container.resolve<IMatchViewModel>(`create${pascalGame}VM`)
 
@@ -45,8 +44,10 @@ export function StartGame() {
 
   const join = useMatchStore((state) => state.join)
 
-  const createGame = async (data: NewGameFormValues) => {
-    const match = await create(games.first()?.id || 0, getInitialMatchState(), {
+  const createMatch = async (data: NewGameFormValues) => {
+    const match = await create(games.first()?.id || 0, getInitialMatchState())
+
+    await join(match.code, {
       name: data.challenger,
       state: getInitialPlayerState()
     })
@@ -55,9 +56,9 @@ export function StartGame() {
   }
 
   const joinGame = async (data: JoinGameFormValues) => {
-    const match = await join(data.code, getJoinState(data.name), {
+    const match = await join(data.code, {
       name: data.name,
-      state: getJoinPlayerState(data.name)
+      state: getJoinPlayerState()
     })
 
     navigate(`/${slug}/${match.code}`)
@@ -78,7 +79,7 @@ export function StartGame() {
   return (
     <Container>
       <Title type="t2">{games.first()?.name}</Title>
-      <NewGame onCreateGame={createGame} />
+      <NewGame onCreateGame={createMatch} />
       <JoinGame onJoinGame={joinGame} />
     </Container>
   )

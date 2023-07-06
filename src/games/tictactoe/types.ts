@@ -27,7 +27,7 @@ export const TicTacToePlayerState = {
   none: () => {
     return {
       markedCells: [],
-      token: 'X'
+      token: '0'
     }
   }
 }

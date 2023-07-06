@@ -1,5 +1,5 @@
 import { createContainer, AwilixContainer, asValue, asFunction } from 'awilix'
-import { IGameService, createGameService } from './services'
+import { AxiosInstance } from 'axios'
 import {
   IChatBoundedStore,
   IGameStore,
@@ -8,8 +8,8 @@ import {
 } from './stores'
 import {
   IMatchBoundedStore,
-  IMatchService,
-  createMatchService,
+  MatchApiServiceFactory,
+  createMatchApiServiceFactory,
   createMatchStore
 } from './games'
 import {
@@ -18,12 +18,21 @@ import {
   createTicTacToeMatchVM
 } from './games/tictactoe'
 import { IMatchViewModel } from './games/match-view-model'
+import { createApiClient } from './services/api-client'
+import {
+  ApiServiceFactory,
+  IGameService,
+  createApiServiceFactory,
+  createGameService
+} from './services'
 
 export interface Dependencies {
   apiUrl: string
   wsUrl: string
+  apiClient: AxiosInstance
+  apiServiceFactory: ApiServiceFactory
+  matchApiServiceFactory: MatchApiServiceFactory
   gameService: IGameService
-  matchService: IMatchService
   useGameStore: IGameStore
   useChatStore: IChatBoundedStore
   useTicTacToeMatchStore: IMatchBoundedStore<
@@ -40,8 +49,10 @@ export function configureContainer(): AwilixContainer<Dependencies> {
   >().register({
     apiUrl: asValue(process.env.REACT_APP_API_URL || ''),
     wsUrl: asValue(process.env.REACT_APP_WS_URL || ''),
+    apiClient: asFunction(createApiClient),
+    apiServiceFactory: asFunction(createApiServiceFactory),
+    matchApiServiceFactory: asFunction(createMatchApiServiceFactory),
     gameService: asFunction(createGameService),
-    matchService: asFunction(createMatchService),
     useGameStore: asFunction(createGameStore).singleton(),
     useChatStore: asFunction(createChatStore).singleton(),
     useTicTacToeMatchStore: asFunction(

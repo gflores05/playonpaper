@@ -72,7 +72,7 @@ export function createBaseCRUDStore<
       set({ items })
     },
     update: async (id: T['id'], dto: PatchDto) => {
-      const item = await apiService.patch(id, dto)
+      const item = await apiService.update(id, dto)
 
       updateMap(map(item))
     },
@@ -82,7 +82,7 @@ export function createBaseCRUDStore<
       set({ items })
     },
     add: async (dto: PostDto) => {
-      const item = await apiService.post(dto)
+      const item = await apiService.create(dto)
 
       updateMap(map(item))
     },

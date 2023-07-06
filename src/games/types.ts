@@ -7,11 +7,11 @@ export interface Game {
 }
 
 export enum MatchStatus {
-  IDLE,
-  PLAYING,
-  FINISHED
+  IDLE = 'IDLE',
+  WAITING = 'WAITING',
+  PLAYING = 'PLAYING',
+  ENDED = 'ENDED'
 }
-
 export interface IMatchState {
   winner?: string
 }
