@@ -1,6 +1,6 @@
 import { StoreApi, UseBoundStore, create } from 'zustand'
 import { pick } from 'lodash'
-import { distinct, tap } from 'rxjs'
+import { Observable, map, tap, filter } from 'rxjs'
 import {
   MatchPlayer,
   Match,
@@ -9,7 +9,7 @@ import {
   IPlayerState
 } from './types'
 import { Dependencies } from '@play/container'
-import { MatchResponse, MatchSubscription } from './match-service'
+import { MatchResponse, MatchUpdateEvent } from './match-service'
 
 function mapMatch<MS extends IMatchState, PS extends IPlayerState>(
   match: MatchResponse<MS, PS>
@@ -34,7 +34,10 @@ export interface MatchStore<
 > {
   match: Match<MS, PS>
   player: MatchPlayer<PS>
-  subscribe: (code: string) => Promise<MatchSubscription<MS, PS>>
+  matchUpdates$?: Observable<MatchResponse<MS, PS>>
+  playerJoin$?: Observable<string>
+  playerLeft$?: Observable<string>
+  subscribe: (code: string) => Promise<void>
   create: (gameId: number, state: MS) => Promise<Match<MS, PS>>
   update: (
     status: MatchStatus,
@@ -90,22 +93,34 @@ export const createMatchStore = <
 
       const match = mapMatch(fetched[0])
 
-      set({
-        match
-      })
+      const messages$ = matchService.connect(match.code, get().player.name)
 
-      const subscriptions = matchService.connect(match.code, get().player.name)
-
-      subscriptions.matchUpdates$.pipe(
-        distinct(),
-        tap((updates) => {
-          console.log('updating state')
-          const match = mapMatch(updates)
-          set({ match })
-        })
+      const matchUpdates$ = messages$.pipe(
+        filter(
+          (message) => message.content.event === MatchUpdateEvent.STATE_UPDATE
+        ),
+        map((message) => message.content.data as MatchResponse<MS, PS>),
+        tap((response) => set({ match: mapMatch(response) }))
+      )
+      const playerJoin$ = messages$.pipe(
+        filter(
+          (message) => message.content.event === MatchUpdateEvent.PLAYER_JOIN
+        ),
+        map((message) => message.content.data as string)
+      )
+      const playerLeft$ = messages$.pipe(
+        filter(
+          (message) => message.content.event === MatchUpdateEvent.PLAYER_LEFT
+        ),
+        map((message) => message.content.data as string)
       )
 
-      return subscriptions
+      set({
+        match,
+        matchUpdates$,
+        playerJoin$,
+        playerLeft$
+      })
     },
     async update(
       status: MatchStatus,

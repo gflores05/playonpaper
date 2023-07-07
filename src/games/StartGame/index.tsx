@@ -14,7 +14,7 @@ import {
 } from '@play/components'
 import { ContainerContext } from '@play/context'
 import { slugToPascal } from '@play/util/string-util'
-import { IMatchViewModel } from '@play/games'
+import { IMatchViewModel, MatchStatus } from '@play/games'
 
 export function StartGame() {
   const container = useContext(ContainerContext)
@@ -33,7 +33,8 @@ export function StartGame() {
     useMatchStore,
     getInitialMatchState,
     getInitialPlayerState,
-    getJoinPlayerState
+    getJoinPlayerState,
+    getJoinInitialState
   } = container.resolve<IMatchViewModel>(`create${pascalGame}VM`)
 
   // Navigation
@@ -41,8 +42,8 @@ export function StartGame() {
 
   // The match store
   const create = useMatchStore((state) => state.create)
-
   const join = useMatchStore((state) => state.join)
+  const update = useMatchStore((state) => state.update)
 
   const createMatch = async (data: NewGameFormValues) => {
     const match = await create(games.first()?.id || 0, getInitialMatchState())
@@ -60,6 +61,8 @@ export function StartGame() {
       name: data.name,
       state: getJoinPlayerState()
     })
+
+    await update(MatchStatus.PLAYING, {}, getJoinInitialState(data.name, match))
 
     navigate(`/${slug}/${match.code}`)
   }

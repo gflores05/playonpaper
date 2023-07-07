@@ -55,12 +55,6 @@ interface WebSocketMessage {
   content: WebSocketMessageContent
 }
 
-export interface MatchSubscription<MS, PS> {
-  matchUpdates$: Subject<MatchResponse<MS, PS>>
-  playerJoin$: Subject<string>
-  playerLeft$: Subject<string>
-}
-
 export interface IMatchService<
   MS extends IMatchState = IMatchState,
   PS extends IPlayerState = IPlayerState
@@ -69,7 +63,7 @@ export interface IMatchService<
     CreateMatchRequest<MS>,
     UpdateMatchRequest<MS, PS>
   > {
-  connect: (code: string, player: string) => MatchSubscription<MS, PS>
+  connect: (code: string, player: string) => Subject<WebSocketMessage>
   join: (
     code: string,
     payload: JoinMatchRequest<PS>
@@ -96,32 +90,18 @@ export function createMatchApiServiceFactory({
       UpdateMatchRequest<MS, PS>
     >('matches')
 
-    function connect<MS>(code: string, player: string) {
+    function connect(code: string, player: string) {
       const websocket = new WebSocket(`${wsUrl}/match/${code}/${player}`)
 
-      const matchUpdates$ = new Subject<MatchResponse<MS, PS>>()
-      const playerJoin$ = new Subject<string>()
-      const playerLeft$ = new Subject<string>()
+      const messages$ = new Subject<WebSocketMessage>()
 
       websocket.onmessage = (evt) => {
         const message: WebSocketMessage = JSON.parse(evt.data)
 
-        switch (message.content.event) {
-          case MatchUpdateEvent.STATE_UPDATE:
-            matchUpdates$.next(message.content.data as MatchResponse<MS, PS>)
-            break
-          case MatchUpdateEvent.PLAYER_JOIN:
-            playerJoin$.next(message.sender)
-            break
-          case MatchUpdateEvent.PLAYER_LEFT:
-            playerLeft$.next(message.sender)
-            break
-          default:
-            break
-        }
+        messages$.next(message)
       }
 
-      return { matchUpdates$, playerJoin$, playerLeft$ }
+      return messages$
     }
 
     async function join(code: string, payload: JoinMatchRequest<PS>) {

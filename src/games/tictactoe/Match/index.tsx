@@ -1,14 +1,12 @@
-import { useContext, useEffect, useState } from 'react'
+import { useContext, useEffect } from 'react'
 import { useParams } from 'react-router-dom'
 import { toast } from 'react-toastify'
-import { Subject } from 'rxjs'
 import useSwr from 'swr'
-import _ from 'lodash'
+import { pick } from 'lodash'
 import { ContainerContext } from '@play/context'
 import { Container, ErrorState, LoadingState, Title } from '@play/components'
 import { TicTacToeBoard } from '../Board'
-import { TicTacToeMatchState, TicTacToePlayerState } from '../types'
-import { MatchResponse } from '@play/games'
+import { Subscription } from 'rxjs'
 
 export function Match() {
   const container = useContext(ContainerContext)
@@ -16,53 +14,49 @@ export function Match() {
   const useMatchStore = container.resolve('useTicTacToeMatchStore')
   const { code } = useParams()
 
-  const [playerJoin, setPlayerJoin] = useState<Subject<string>>(new Subject())
-  const [playerLeft, setPlayerLeft] = useState<Subject<string>>(new Subject())
-  const [matchUpdates, setMatchUpdate] = useState<
-    Subject<MatchResponse<TicTacToeMatchState, TicTacToePlayerState>>
-  >(new Subject())
-
   const subscribe = useMatchStore((state) => state.subscribe)
   const match = useMatchStore((state) => state.match)
-  const [currentPlayer, setCurrentPlayer] = useState(
-    match.state.currentPlayer ||
-      _(match.players)
-        .pickBy((val) => val.state.token === 'X')
-        .keys()
-        .first()
+  const { playerJoin$, playerLeft$ } = useMatchStore((state) =>
+    pick(state, 'matchUpdates$', 'playerJoin$', 'playerLeft$')
   )
 
   const init = async () => {
-    const { playerJoin$, playerLeft$, matchUpdates$ } = await subscribe(
-      code || ''
-    )
-
-    matchUpdates$.subscribe((updates) => {
-      setCurrentPlayer(updates.state.currentPlayer)
-    })
-
-    playerJoin$.subscribe((player) => {
-      toast(`${player} has joined the game!`, { type: 'info' })
-    })
-
-    playerLeft$.subscribe((player) => {
-      toast(`${player} has left the game!`, { type: 'info' })
-    })
-
-    setMatchUpdate(matchUpdates$)
-    setPlayerJoin(playerJoin$)
-    setPlayerLeft(playerLeft$)
+    await subscribe(code || '')
   }
 
-  const { isLoading, error } = useSwr('/match-subscription', init)
+  useEffect(() => {
+    let subscription: Subscription
+
+    if (playerJoin$) {
+      subscription = playerJoin$.subscribe((player) => {
+        toast(`${player} has joined the game!`, { type: 'info' })
+      })
+    }
+
+    return () => {
+      if (subscription) {
+        subscription.unsubscribe()
+      }
+    }
+  }, [playerJoin$])
 
   useEffect(() => {
-    return () => {
-      matchUpdates.unsubscribe()
-      playerJoin.unsubscribe()
-      playerLeft.unsubscribe()
+    let subscription: Subscription
+
+    if (playerLeft$) {
+      subscription = playerLeft$.subscribe((player) => {
+        toast(`${player} has left the game!`, { type: 'info' })
+      })
     }
-  }, [playerJoin, playerLeft, matchUpdates])
+
+    return () => {
+      if (subscription) {
+        subscription.unsubscribe()
+      }
+    }
+  }, [playerLeft$])
+
+  const { isLoading, error } = useSwr('/match-subscription', init)
 
   if (error) {
     return (
@@ -79,8 +73,8 @@ export function Match() {
   return (
     <Container>
       <Title>
-        {currentPlayer
-          ? `Is the turn of ${currentPlayer}`
+        {match.state.currentPlayer
+          ? `Is the turn of ${match.state.currentPlayer}`
           : 'Waiting for the other player to join'}
       </Title>
       {match.state.winner && (
