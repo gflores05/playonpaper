@@ -54,9 +54,14 @@ interface GameTileProps {
 
 function GameTile({ game }: GameTileProps) {
   const navigate = useNavigate()
+  const container = useContext(ContainerContext)
+  const useMatchRootStore = container.resolve('useMatchRootStore')
+
+  const setSlug = useMatchRootStore((state) => state.setSlug)
 
   const onStartGame = () => {
-    navigate(`/games/new/${game.slug}`)
+    setSlug(game.slug)
+    navigate(`/games/new`)
   }
 
   return (

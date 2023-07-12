@@ -8,10 +8,12 @@ import {
 } from './stores'
 import {
   IMatchBoundedStore,
+  IMatchRootBoundedStore,
   MatchApiServiceFactory,
   createMatchApiServiceFactory,
   createMatchStore
 } from './games'
+import { createMatchRootStore } from './games/match-root-store'
 import {
   TicTacToeMatchState,
   TicTacToePlayerState,
@@ -35,6 +37,7 @@ export interface Dependencies {
   gameService: IGameService
   useGameStore: IGameStore
   useChatStore: IChatBoundedStore
+  useMatchRootStore: IMatchRootBoundedStore
   useTicTacToeMatchStore: IMatchBoundedStore<
     TicTacToeMatchState,
     TicTacToePlayerState
@@ -43,21 +46,27 @@ export interface Dependencies {
 }
 
 export function configureContainer(): AwilixContainer<Dependencies> {
-  return createContainer<
-    Dependencies,
-    AwilixContainer<Dependencies>
-  >().register({
-    apiUrl: asValue(process.env.REACT_APP_API_URL || ''),
-    wsUrl: asValue(process.env.REACT_APP_WS_URL || ''),
-    apiClient: asFunction(createApiClient),
-    apiServiceFactory: asFunction(createApiServiceFactory),
-    matchApiServiceFactory: asFunction(createMatchApiServiceFactory),
-    gameService: asFunction(createGameService),
-    useGameStore: asFunction(createGameStore).singleton(),
-    useChatStore: asFunction(createChatStore).singleton(),
-    useTicTacToeMatchStore: asFunction(
-      createMatchStore<TicTacToeMatchState, TicTacToePlayerState>
-    ).singleton(),
-    createTicTacToeVM: asFunction(createTicTacToeMatchVM)
-  })
+  try {
+    return createContainer<
+      Dependencies,
+      AwilixContainer<Dependencies>
+    >().register({
+      apiUrl: asValue(process.env.REACT_APP_API_URL || ''),
+      wsUrl: asValue(process.env.REACT_APP_WS_URL || ''),
+      apiClient: asFunction(createApiClient),
+      apiServiceFactory: asFunction(createApiServiceFactory),
+      matchApiServiceFactory: asFunction(createMatchApiServiceFactory),
+      gameService: asFunction(createGameService),
+      useGameStore: asFunction(createGameStore).singleton(),
+      useChatStore: asFunction(createChatStore).singleton(),
+      useMatchRootStore: asFunction(createMatchRootStore).singleton(),
+      useTicTacToeMatchStore: asFunction(
+        createMatchStore<TicTacToeMatchState, TicTacToePlayerState>
+      ).singleton(),
+      createTicTacToeVM: asFunction(createTicTacToeMatchVM)
+    })
+  } catch (error) {
+    console.error(error)
+  }
+  return createContainer()
 }

@@ -8,7 +8,7 @@ import { Container, ErrorState, LoadingState, Title } from '@play/components'
 import { TicTacToeBoard } from '../Board'
 import { Subscription } from 'rxjs'
 
-export function Match() {
+export function TicTacToeMatch() {
   const container = useContext(ContainerContext)
 
   const useMatchStore = container.resolve('useTicTacToeMatchStore')

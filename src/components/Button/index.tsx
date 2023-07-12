@@ -1,6 +1,6 @@
 import cx from 'classnames'
 
-type ButtonMode = 'default' | 'primary' | 'success' | 'danger'
+export type ButtonMode = 'default' | 'primary' | 'success' | 'danger'
 
 const ButtonColors: { [key: string]: string } = {
   default: 'bg-white hover:bg-slate-50',

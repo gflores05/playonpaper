@@ -1,6 +1,6 @@
-import { useContext } from 'react'
+import { useCallback, useContext, useEffect } from 'react'
 import { pick } from 'lodash'
-import { useNavigate, useParams } from 'react-router-dom'
+import { useNavigate } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
 import useSwr from 'swr'
 import {
@@ -17,11 +17,37 @@ import { slugToPascal } from '@play/util/string-util'
 import { IMatchViewModel, MatchStatus } from '@play/games'
 
 export function StartGame() {
+  const navigate = useNavigate()
   const container = useContext(ContainerContext)
 
+  const useMatchRootStore = container.resolve('useMatchRootStore')
+  const slug = useMatchRootStore((state) => state.slug)
+
+  useEffect(() => {
+    if (!slug) {
+      navigate('/games')
+    }
+  }, [slug, navigate])
+
+  if (!slug) {
+    return <></>
+  }
+
+  return <StartGameContent />
+}
+
+function StartGameContent() {
+  const navigate = useNavigate()
+  const container = useContext(ContainerContext)
+
+  const useMatchRootStore = container.resolve('useMatchRootStore')
+
+  const setPmp = useMatchRootStore((state) => state.setPmp)
+  const slug = useMatchRootStore((state) => state.slug)
+
   // Fetch the game
-  const { slug } = useParams()
   const useGameStore = container.resolve('useGameStore')
+
   const { fetch, items: games } = useGameStore((state) =>
     pick(state, 'fetch', 'items')
   )
@@ -37,35 +63,54 @@ export function StartGame() {
     getJoinInitialState
   } = container.resolve<IMatchViewModel>(`create${pascalGame}VM`)
 
-  // Navigation
-  const navigate = useNavigate()
-
   // The match store
   const create = useMatchStore((state) => state.create)
   const join = useMatchStore((state) => state.join)
   const update = useMatchStore((state) => state.update)
 
-  const createMatch = async (data: NewGameFormValues) => {
-    const match = await create(games.first()?.id || 0, getInitialMatchState())
+  const createMatch = useCallback(
+    async (data: NewGameFormValues) => {
+      const match = await create(games.first()?.id || 0, getInitialMatchState())
 
-    await join(match.code, {
-      name: data.challenger,
-      state: getInitialPlayerState()
-    })
+      const [pmp] = await join(match.code, {
+        name: data.challenger,
+        state: getInitialPlayerState()
+      })
 
-    navigate(`/${slug}/${match.code}`)
-  }
+      setPmp(pmp)
 
-  const joinGame = async (data: JoinGameFormValues) => {
-    const match = await join(data.code, {
-      name: data.name,
-      state: getJoinPlayerState()
-    })
+      navigate(`/games/${match.code}`)
+    },
+    [
+      create,
+      games,
+      getInitialMatchState,
+      setPmp,
+      getInitialPlayerState,
+      join,
+      navigate
+    ]
+  )
 
-    await update(MatchStatus.PLAYING, {}, getJoinInitialState(data.name, match))
+  const joinGame = useCallback(
+    async (data: JoinGameFormValues) => {
+      const [pmp, match] = await join(data.code, {
+        name: data.name,
+        state: getJoinPlayerState()
+      })
 
-    navigate(`/${slug}/${match.code}`)
-  }
+      await update(
+        MatchStatus.PLAYING,
+        {},
+        getJoinInitialState(data.name, match)
+      )
+
+      setPmp(pmp)
+
+      navigate(`/games/${data.code}`)
+    },
+    [join, getJoinPlayerState, update, getJoinInitialState, navigate, setPmp]
+  )
 
   if (error) {
     return (

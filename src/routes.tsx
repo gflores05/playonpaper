@@ -4,7 +4,7 @@ import { Games } from '@play/games'
 import ErrorPage from '@play/views/ErrorPage'
 import Chat from '@play/views/Chat'
 import { StartGame } from './games/StartGame'
-import { Match } from './games/tictactoe/Match'
+import { Match } from './games/Match'
 
 const router = createBrowserRouter([
   {
@@ -17,11 +17,11 @@ const router = createBrowserRouter([
         element: <Games />
       },
       {
-        path: 'games/new/:slug',
+        path: 'games/new',
         element: <StartGame />
       },
       {
-        path: 'tic-tac-toe/:code',
+        path: 'games/:code',
         element: <Match />
       },
       {

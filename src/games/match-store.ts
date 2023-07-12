@@ -44,7 +44,10 @@ export interface MatchStore<
     playerState: Partial<PS>,
     newState: Partial<MS>
   ) => Promise<void>
-  join: (code: string, player: MatchPlayer<PS>) => Promise<Match<MS, PS>>
+  join: (
+    code: string,
+    player: MatchPlayer<PS>
+  ) => Promise<[string, Match<MS, PS>]>
 }
 
 export const createMatchStore = <
@@ -86,7 +89,7 @@ export const createMatchStore = <
         player: { ...player, pmp: joinResult.pmp }
       })
 
-      return match
+      return [joinResult.pmp, match]
     },
     async subscribe(code: string) {
       const fetched = await matchService.getAll({ code })
