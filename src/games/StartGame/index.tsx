@@ -2,16 +2,7 @@ import { useCallback, useContext, useEffect } from 'react'
 import { pick } from 'lodash'
 import { useNavigate } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
-import useSwr from 'swr'
-import {
-  Button,
-  Container,
-  ErrorState,
-  Form,
-  Input,
-  LoadingState,
-  Title
-} from '@play/components'
+import { Button, Container, Form, Input, Title } from '@play/components'
 import { ContainerContext } from '@play/context'
 import { slugToPascal } from '@play/util/string-util'
 import { IMatchViewModel, MatchStatus } from '@play/games'
@@ -44,14 +35,12 @@ function StartGameContent() {
 
   const setPmp = useMatchRootStore((state) => state.setPmp)
   const slug = useMatchRootStore((state) => state.slug)
+  const gameId = useMatchRootStore((state) => state.gameId)
 
   // Fetch the game
   const useGameStore = container.resolve('useGameStore')
 
-  const { fetch, items: games } = useGameStore((state) =>
-    pick(state, 'fetch', 'items')
-  )
-  const { error, isLoading } = useSwr('/games', () => fetch({ slug }))
+  const { items } = useGameStore((state) => pick(state, 'fetch', 'items'))
 
   // Get the MatchVM
   const pascalGame = slugToPascal(slug || '')
@@ -70,7 +59,7 @@ function StartGameContent() {
 
   const createMatch = useCallback(
     async (data: NewGameFormValues) => {
-      const match = await create(games.first()?.id || 0, getInitialMatchState())
+      const match = await create(gameId || 0, getInitialMatchState())
 
       const [pmp] = await join(match.code, {
         name: data.challenger,
@@ -83,7 +72,7 @@ function StartGameContent() {
     },
     [
       create,
-      games,
+      gameId,
       getInitialMatchState,
       setPmp,
       getInitialPlayerState,
@@ -112,21 +101,9 @@ function StartGameContent() {
     [join, getJoinPlayerState, update, getJoinInitialState, navigate, setPmp]
   )
 
-  if (error) {
-    return (
-      <ErrorState>
-        An error has occurred fetching the data: {error.message}
-      </ErrorState>
-    )
-  }
-
-  if (isLoading) {
-    return <LoadingState>Loading...</LoadingState>
-  }
-
   return (
     <Container>
-      <Title type="t2">{games.first()?.name}</Title>
+      <Title type="t2">{items.get(gameId)?.name}</Title>
       <NewGame onCreateGame={createMatch} />
       <JoinGame onJoinGame={joinGame} />
     </Container>
