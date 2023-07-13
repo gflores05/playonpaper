@@ -1,13 +1,12 @@
-import { IMatchViewModel } from '../match-view-model'
+import { IMatchFactory } from '../match-factory'
 import { Match } from '../types'
 import { TicTacToeMatchState, TicTacToePlayerState } from './types'
-import { Dependencies } from '@play/container'
 
-export function createTicTacToeMatchVM({
-  useTicTacToeMatchStore
-}: Dependencies): IMatchViewModel<TicTacToeMatchState, TicTacToePlayerState> {
+export function createTicTacToeMatchFactory(): IMatchFactory<
+  TicTacToeMatchState,
+  TicTacToePlayerState
+> {
   return {
-    useMatchStore: useTicTacToeMatchStore,
     getInitialMatchState: () => TicTacToeMatchState.none(),
     getInitialPlayerState: () => TicTacToePlayerState.none(),
     getJoinInitialState: (

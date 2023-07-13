@@ -3,6 +3,9 @@ import { shallow } from 'zustand/shallow'
 import { useParams } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
 import useSwr from 'swr'
+import { AxiosError } from 'axios'
+import { toast } from 'react-toastify'
+import { pick } from 'lodash'
 import {
   Container,
   Title,
@@ -16,15 +19,11 @@ import {
 } from '@play/components'
 import { ContainerContext } from '@play/context'
 import { TicTacToeMatch } from '@play/games/tictactoe'
-import { slugToPascal } from '@play/util'
-import { IMatchViewModel } from '../match-view-model'
-import { AxiosError } from 'axios'
-import { toast } from 'react-toastify'
 interface ConcretMatchProps {
   slug: string
 }
 
-function ConcretMatch({ slug }: ConcretMatchProps) {
+function ConcreteMatch({ slug }: ConcretMatchProps) {
   switch (slug) {
     case 'tic-tac-toe':
       return <TicTacToeMatch />
@@ -38,8 +37,12 @@ export function Match() {
   const { code = '' } = useParams()
 
   const useMatchRootStore = container.resolve('useMatchRootStore')
-  const { slug, pmp, fetchByCode } = useMatchRootStore(
-    (state) => state,
+  const {
+    game,
+    pmp = '',
+    fetchByCode
+  } = useMatchRootStore(
+    (state) => pick(state, 'game', 'pmp', 'fetchByCode'),
     shallow
   )
 
@@ -60,7 +63,7 @@ export function Match() {
   }
 
   if (!pmp) {
-    return <RestoreMatch slug={slug} />
+    return <RestoreMatch />
   }
 
   return (
@@ -72,11 +75,11 @@ export function Match() {
         </Title>
         <Title type="t2">
           Save this code if you want to leave the game and restore it later{' '}
-          <CopyButton value={pmp || ''} message="Pmp copied to clipboard" />
+          <CopyButton value={pmp} message="Pmp copied to clipboard" />
         </Title>
       </Row>
       <Row columns={1}>
-        <ConcretMatch slug={slug} />
+        <ConcreteMatch slug={game.slug} />
       </Row>
     </Container>
   )
@@ -87,38 +90,28 @@ type RestoreMatchForm = {
   name: string
 }
 
-interface RestoreMatchProps {
-  slug: string
-}
-
 function isAxiosError(error: any): error is AxiosError {
   return 'response' in error
 }
-const RestoreMatch = ({ slug }: RestoreMatchProps) => {
+
+const RestoreMatch = () => {
   const container = useContext(ContainerContext)
 
   const { code = '' } = useParams()
 
-  // Get the MatchVM
-  const pascalGame = slugToPascal(slug || '')
-  const { useMatchStore, getJoinPlayerState } =
-    container.resolve<IMatchViewModel>(`create${pascalGame}VM`)
+  // Get the Match Factory
   const useMatchRootStore = container.resolve('useMatchRootStore')
 
-  const join = useMatchStore((state) => state.join)
-
-  const setPmp = useMatchRootStore((state) => state.setPmp)
+  const join = useMatchRootStore((state) => state.join)
 
   const onRestoreMatch = useCallback(
     async (data: RestoreMatchForm) => {
       try {
-        const [pmp] = await join(code, {
+        await join(code, {
           name: data.name,
-          state: getJoinPlayerState(),
+          state: {},
           pmp: data.pmp
         })
-
-        setPmp(pmp)
       } catch (error) {
         if (isAxiosError(error)) {
           if (error.code === AxiosError.ERR_BAD_REQUEST) {
@@ -127,7 +120,7 @@ const RestoreMatch = ({ slug }: RestoreMatchProps) => {
         }
       }
     },
-    [code, join, getJoinPlayerState, setPmp]
+    [code, join]
   )
 
   const {

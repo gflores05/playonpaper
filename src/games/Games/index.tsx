@@ -57,12 +57,10 @@ function GameTile({ game }: GameTileProps) {
   const container = useContext(ContainerContext)
   const useMatchRootStore = container.resolve('useMatchRootStore')
 
-  const setSlug = useMatchRootStore((state) => state.setSlug)
-  const setGameId = useMatchRootStore((state) => state.setGameId)
+  const setGame = useMatchRootStore((state) => state.setGame)
 
   const onStartGame = () => {
-    setSlug(game.slug)
-    setGameId(game.id)
+    setGame(game)
     navigate(`/games/new`)
   }
 

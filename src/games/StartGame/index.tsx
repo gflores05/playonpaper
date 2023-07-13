@@ -5,22 +5,23 @@ import { useForm } from 'react-hook-form'
 import { Button, Container, Form, Input, Title } from '@play/components'
 import { ContainerContext } from '@play/context'
 import { slugToPascal } from '@play/util/string-util'
-import { IMatchViewModel, MatchStatus } from '@play/games'
+import { IMatchFactory, MatchStatus } from '@play/games'
+import { shallow } from 'zustand/shallow'
 
 export function StartGame() {
   const navigate = useNavigate()
   const container = useContext(ContainerContext)
 
   const useMatchRootStore = container.resolve('useMatchRootStore')
-  const slug = useMatchRootStore((state) => state.slug)
+  const game = useMatchRootStore((state) => state.game)
 
   useEffect(() => {
-    if (!slug) {
+    if (!game.id) {
       navigate('/games')
     }
-  }, [slug, navigate])
+  }, [game, navigate])
 
-  if (!slug) {
+  if (!game.id) {
     return <></>
   }
 
@@ -33,77 +34,55 @@ function StartGameContent() {
 
   const useMatchRootStore = container.resolve('useMatchRootStore')
 
-  const setPmp = useMatchRootStore((state) => state.setPmp)
-  const slug = useMatchRootStore((state) => state.slug)
-  const gameId = useMatchRootStore((state) => state.gameId)
+  const { create, join, update, game } = useMatchRootStore(
+    (state) => pick(state, 'create', 'join', 'update', 'game'),
+    shallow
+  )
 
-  // Fetch the game
-  const useGameStore = container.resolve('useGameStore')
-
-  const { items } = useGameStore((state) => pick(state, 'fetch', 'items'))
-
-  // Get the MatchVM
-  const pascalGame = slugToPascal(slug || '')
+  // Get the Match Factory
+  const pascalGame = slugToPascal(game.slug)
   const {
-    useMatchStore,
     getInitialMatchState,
     getInitialPlayerState,
     getJoinPlayerState,
     getJoinInitialState
-  } = container.resolve<IMatchViewModel>(`create${pascalGame}VM`)
+  } = container.resolve<IMatchFactory>(`factory${pascalGame}`)
 
   // The match store
-  const create = useMatchStore((state) => state.create)
-  const join = useMatchStore((state) => state.join)
-  const update = useMatchStore((state) => state.update)
-
   const createMatch = useCallback(
     async (data: NewGameFormValues) => {
-      const match = await create(gameId || 0, getInitialMatchState())
+      const match = await create(getInitialMatchState())
 
-      const [pmp] = await join(match.code, {
+      await join(match.code, {
         name: data.challenger,
         state: getInitialPlayerState()
       })
 
-      setPmp(pmp)
-
       navigate(`/games/${match.code}`)
     },
-    [
-      create,
-      gameId,
-      getInitialMatchState,
-      setPmp,
-      getInitialPlayerState,
-      join,
-      navigate
-    ]
+    [create, getInitialMatchState, getInitialPlayerState, join, navigate]
   )
 
   const joinGame = useCallback(
     async (data: JoinGameFormValues) => {
-      const [pmp, match] = await join(data.code, {
+      const match = await join(data.code, {
         name: data.name,
         state: getJoinPlayerState()
       })
 
       await update(
+        match.id,
         MatchStatus.PLAYING,
-        {},
         getJoinInitialState(data.name, match)
       )
-
-      setPmp(pmp)
-
       navigate(`/games/${data.code}`)
     },
-    [join, getJoinPlayerState, update, getJoinInitialState, navigate, setPmp]
+    [join, getJoinPlayerState, update, getJoinInitialState, navigate]
   )
 
   return (
     <Container>
-      <Title type="t2">{items.get(gameId)?.name}</Title>
+      <Title type="t2">{game.name}</Title>
       <NewGame onCreateGame={createMatch} />
       <JoinGame onJoinGame={joinGame} />
     </Container>

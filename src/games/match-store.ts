@@ -1,5 +1,4 @@
 import { StoreApi, UseBoundStore, create } from 'zustand'
-import { pick } from 'lodash'
 import { Observable, map, tap, filter } from 'rxjs'
 import {
   MatchPlayer,
@@ -10,18 +9,7 @@ import {
 } from './types'
 import { Dependencies } from '@play/container'
 import { MatchResponse, MatchUpdateEvent } from './match-service'
-
-function mapMatch<MS extends IMatchState, PS extends IPlayerState>(
-  match: MatchResponse<MS, PS>
-): Match<MS, PS> {
-  return {
-    ...pick(match, ['id', 'state', 'code', 'game']),
-    status: MatchStatus[match.status as keyof typeof MatchStatus],
-    start: new Date(match.start_date),
-    end: new Date(match.end_date),
-    players: match.players
-  }
-}
+import { mapMatch } from './mappers'
 
 export interface IMatchBoundedStore<
   MS extends IMatchState,
@@ -37,17 +25,12 @@ export interface MatchStore<
   matchUpdates$?: Observable<MatchResponse<MS, PS>>
   playerJoin$?: Observable<string>
   playerLeft$?: Observable<string>
-  subscribe: (code: string) => Promise<void>
-  create: (gameId: number, state: MS) => Promise<Match<MS, PS>>
   update: (
     status: MatchStatus,
     playerState: Partial<PS>,
     newState: Partial<MS>
   ) => Promise<void>
-  join: (
-    code: string,
-    player: MatchPlayer<PS>
-  ) => Promise<[string, Match<MS, PS>]>
+  subscribe: (code: string, player: string, pmp: string) => Promise<void>
 }
 
 export const createMatchStore = <
@@ -61,42 +44,12 @@ export const createMatchStore = <
   return create<MatchStore<MS, PS>>()((set, get) => ({
     match: Match.none<MS, PS>(),
     player: MatchPlayer.none<PS>(),
-    async create(gameId: number, state: MS) {
-      const matchCreated = await matchService.create({
-        game_id: gameId,
-        state
-      })
-
-      const match = mapMatch(matchCreated)
-
-      set({
-        match
-      })
-
-      return match
-    },
-    async join(code, player: MatchPlayer<PS>) {
-      const joinResult = await matchService.join(code, {
-        player
-      })
-
-      const result = await matchService.getAll({ code })
-
-      const match = mapMatch(result[0])
-
-      set({
-        match: { ...get().match, ...match },
-        player: { ...player, pmp: joinResult.pmp }
-      })
-
-      return [joinResult.pmp, match]
-    },
-    async subscribe(code: string) {
+    async subscribe(code: string, player: string, pmp: string) {
       const fetched = await matchService.getAll({ code })
 
       const match = mapMatch(fetched[0])
 
-      const messages$ = matchService.connect(match.code, get().player.name)
+      const messages$ = matchService.connect(match.code, player)
 
       const matchUpdates$ = messages$.pipe(
         filter(
@@ -120,6 +73,7 @@ export const createMatchStore = <
 
       set({
         match,
+        player: { ...match.players[player], pmp },
         matchUpdates$,
         playerJoin$,
         playerLeft$

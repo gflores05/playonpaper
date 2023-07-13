@@ -1,5 +1,5 @@
 export * from './types'
 export * from '../StartGame'
 export * from './Board'
-export * from './match-vm'
+export * from './match-factory'
 export * from './Match'

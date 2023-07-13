@@ -6,6 +6,17 @@ export interface Game {
   configuration: { [key: string]: unknown }
 }
 
+export const Game = {
+  none() {
+    return {
+      id: 0,
+      name: '',
+      slug: '',
+      configuration: {}
+    } as Game
+  }
+}
+
 export enum MatchStatus {
   IDLE = 'IDLE',
   WAITING = 'WAITING',
@@ -33,7 +44,7 @@ export interface Match<
 }
 
 export const Match = {
-  none: <MS extends IMatchState, PS extends IPlayerState>() => {
+  none<MS extends IMatchState, PS extends IPlayerState>() {
     return {
       id: 0,
       start: new Date(),
@@ -53,7 +64,7 @@ export interface MatchPlayer<PS extends IPlayerState = IPlayerState> {
 }
 
 export const MatchPlayer = {
-  none: <PS extends IPlayerState>() => {
+  none<PS extends IPlayerState>() {
     return { name: '', pmp: '', state: {} } as MatchPlayer<PS>
   }
 }

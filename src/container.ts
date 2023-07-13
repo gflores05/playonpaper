@@ -17,9 +17,9 @@ import { createMatchRootStore } from './games/match-root-store'
 import {
   TicTacToeMatchState,
   TicTacToePlayerState,
-  createTicTacToeMatchVM
+  createTicTacToeMatchFactory
 } from './games/tictactoe'
-import { IMatchViewModel } from './games/match-view-model'
+import { IMatchFactory } from './games/match-factory'
 import { createApiClient } from './services/api-client'
 import {
   ApiServiceFactory,
@@ -42,7 +42,7 @@ export interface Dependencies {
     TicTacToeMatchState,
     TicTacToePlayerState
   >
-  createTicTacToeVM: IMatchViewModel<TicTacToeMatchState, TicTacToePlayerState>
+  factoryTicTacToe: IMatchFactory<TicTacToeMatchState, TicTacToePlayerState>
 }
 
 export function configureContainer(): AwilixContainer<Dependencies> {
@@ -63,7 +63,7 @@ export function configureContainer(): AwilixContainer<Dependencies> {
       useTicTacToeMatchStore: asFunction(
         createMatchStore<TicTacToeMatchState, TicTacToePlayerState>
       ).singleton(),
-      createTicTacToeVM: asFunction(createTicTacToeMatchVM)
+      factoryTicTacToe: asFunction(createTicTacToeMatchFactory)
     })
   } catch (error) {
     console.error(error)

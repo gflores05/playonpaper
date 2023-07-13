@@ -3,25 +3,30 @@ import { useParams } from 'react-router-dom'
 import { toast } from 'react-toastify'
 import useSwr from 'swr'
 import { pick } from 'lodash'
+import { Subscription } from 'rxjs'
 import { ContainerContext } from '@play/context'
 import { Container, ErrorState, LoadingState, Title } from '@play/components'
 import { TicTacToeBoard } from '../Board'
-import { Subscription } from 'rxjs'
+import { shallow } from 'zustand/shallow'
 
 export function TicTacToeMatch() {
   const container = useContext(ContainerContext)
 
+  const useMatchRootStore = container.resolve('useMatchRootStore')
   const useMatchStore = container.resolve('useTicTacToeMatchStore')
-  const { code } = useParams()
+  const { code = '' } = useParams()
 
   const subscribe = useMatchStore((state) => state.subscribe)
   const match = useMatchStore((state) => state.match)
-  const { playerJoin$, playerLeft$ } = useMatchStore((state) =>
-    pick(state, 'matchUpdates$', 'playerJoin$', 'playerLeft$')
+  const { playerJoin$, playerLeft$ } = useMatchStore(
+    (state) => pick(state, 'matchUpdates$', 'playerJoin$', 'playerLeft$'),
+    shallow
   )
+  const player = useMatchRootStore((state) => state.name)
+  const pmp = useMatchRootStore((state) => state.pmp)
 
   const init = async () => {
-    await subscribe(code || '')
+    await subscribe(code, player, pmp || '')
   }
 
   useEffect(() => {
@@ -72,13 +77,16 @@ export function TicTacToeMatch() {
 
   return (
     <Container>
-      <Title>
-        {match.state.currentPlayer
-          ? `Is the turn of ${match.state.currentPlayer}`
-          : 'Waiting for the other player to join'}
-      </Title>
-      {match.state.winner && (
+      {match.state.winner ? (
         <Title type="t2">The winner is {match.state.winner}</Title>
+      ) : (
+        <Title>
+          {match.state.currentPlayer
+            ? match.state.currentPlayer === player
+              ? `Is your turn`
+              : `Is the turn of ${match.state.currentPlayer}`
+            : 'Waiting for the other player to join'}
+        </Title>
       )}
       <TicTacToeBoard />
     </Container>

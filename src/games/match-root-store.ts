@@ -1,14 +1,21 @@
 import { Dependencies } from '@play/container'
 import { StoreApi, UseBoundStore, create } from 'zustand'
+import { Game, IMatchState, Match, MatchPlayer, MatchStatus } from './types'
+import { mapMatch } from './mappers'
 
 interface IMatchRootStore {
-  slug: string
   pmp?: string
-  gameId: number
+  name: string
+  game: Game
   fetchByCode: (code: string) => Promise<void>
-  setSlug: (slug: string) => void
-  setPmp: (pmp: string) => void
-  setGameId: (gameId: number) => void
+  setGame: (game: Game) => void
+  create: (state: IMatchState) => Promise<Match>
+  update: (
+    matchId: number,
+    status: MatchStatus,
+    newState: Partial<IMatchState>
+  ) => Promise<void>
+  join: (code: string, player: MatchPlayer) => Promise<Match>
 }
 
 export interface IMatchRootBoundedStore
@@ -17,17 +24,11 @@ export interface IMatchRootBoundedStore
 export function createMatchRootStore({ matchApiServiceFactory }: Dependencies) {
   const matchService = matchApiServiceFactory()
 
-  return create<IMatchRootStore>()((set) => ({
-    slug: '',
-    gameId: 0,
-    setSlug(slug) {
-      set({ slug })
-    },
-    setPmp(pmp) {
-      set({ pmp })
-    },
-    setGameId(gameId: number) {
-      set({ gameId })
+  return create<IMatchRootStore>()((set, get) => ({
+    game: Game.none(),
+    name: '',
+    setGame(game: Game) {
+      set({ game })
     },
     async fetchByCode(code: string) {
       const result = await matchService.getAll({ code })
@@ -36,7 +37,49 @@ export function createMatchRootStore({ matchApiServiceFactory }: Dependencies) {
         throw Error('No match with this code found')
       }
 
-      set({ slug: result[0].game.slug })
+      set({ game: result[0].game })
+    },
+    async create(state: IMatchState) {
+      const matchCreated = await matchService.create({
+        game_id: get().game.id,
+        state
+      })
+
+      const match = mapMatch(matchCreated)
+
+      set({
+        game: match.game
+      })
+
+      return match
+    },
+    async join(code, player: MatchPlayer) {
+      const joinResult = await matchService.join(code, {
+        player
+      })
+
+      const result = await matchService.getAll({ code })
+
+      const match = mapMatch(result[0])
+
+      set({
+        game: match.game,
+        pmp: joinResult.pmp,
+        name: player.name
+      })
+
+      return match
+    },
+    async update(
+      matchId: number,
+      status: MatchStatus,
+      state: Partial<IMatchState>
+    ) {
+      await matchService.update(matchId, {
+        status,
+        player: { name: get().name, pmp: get().pmp, state: {} },
+        state
+      })
     }
   }))
 }
