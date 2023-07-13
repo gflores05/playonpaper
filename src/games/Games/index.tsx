@@ -1,6 +1,5 @@
 import { useContext } from 'react'
-import useSwr from 'swr'
-import pick from 'lodash/pick'
+import { useNavigate } from 'react-router-dom'
 import { ContainerContext } from '@play/context'
 import {
   Button,
@@ -11,19 +10,10 @@ import {
 } from '@play/components'
 import { ImageLogos } from '@play/assets'
 import { Game } from '../types'
-import { useNavigate } from 'react-router-dom'
-import { shallow } from 'zustand/shallow'
+import { useGames } from './games-hook'
 
 export const Games = () => {
-  const container = useContext(ContainerContext)
-  const useGameStore = container.resolve('useGameStore')
-
-  const { items: games, fetch } = useGameStore(
-    (state) => pick(state, 'items', 'fetch'),
-    shallow
-  )
-
-  const { error, isLoading } = useSwr('/games', () => fetch())
+  const { error, isLoading, games } = useGames()
 
   if (error) {
     return (
@@ -34,7 +24,7 @@ export const Games = () => {
   }
 
   if (isLoading) {
-    ;<LoadingState />
+    return <LoadingState />
   }
 
   return (

@@ -1,27 +1,16 @@
-import { useCallback, useContext, useEffect } from 'react'
-import { pick } from 'lodash'
-import { useNavigate } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
 import { Button, Container, Form, Input, Title } from '@play/components'
-import { ContainerContext } from '@play/context'
-import { slugToPascal } from '@play/util/string-util'
-import { IMatchFactory, MatchStatus } from '@play/games'
-import { shallow } from 'zustand/shallow'
+import {
+  JoinGameFormValues,
+  NewGameFormValues,
+  useCanLoadGame,
+  useStartGame
+} from './start-game-hook'
 
 export function StartGame() {
-  const navigate = useNavigate()
-  const container = useContext(ContainerContext)
+  const canLoadGame = useCanLoadGame()
 
-  const useMatchRootStore = container.resolve('useMatchRootStore')
-  const game = useMatchRootStore((state) => state.game)
-
-  useEffect(() => {
-    if (!game.id) {
-      navigate('/games')
-    }
-  }, [game, navigate])
-
-  if (!game.id) {
+  if (!canLoadGame) {
     return <></>
   }
 
@@ -29,56 +18,7 @@ export function StartGame() {
 }
 
 function StartGameContent() {
-  const navigate = useNavigate()
-  const container = useContext(ContainerContext)
-
-  const useMatchRootStore = container.resolve('useMatchRootStore')
-
-  const { create, join, update, game } = useMatchRootStore(
-    (state) => pick(state, 'create', 'join', 'update', 'game'),
-    shallow
-  )
-
-  // Get the Match Factory
-  const pascalGame = slugToPascal(game.slug)
-  const {
-    getInitialMatchState,
-    getInitialPlayerState,
-    getJoinPlayerState,
-    getJoinInitialState
-  } = container.resolve<IMatchFactory>(`factory${pascalGame}`)
-
-  // The match store
-  const createMatch = useCallback(
-    async (data: NewGameFormValues) => {
-      const match = await create(getInitialMatchState())
-
-      await join(match.code, {
-        name: data.challenger,
-        state: getInitialPlayerState()
-      })
-
-      navigate(`/games/${match.code}`)
-    },
-    [create, getInitialMatchState, getInitialPlayerState, join, navigate]
-  )
-
-  const joinGame = useCallback(
-    async (data: JoinGameFormValues) => {
-      const match = await join(data.code, {
-        name: data.name,
-        state: getJoinPlayerState()
-      })
-
-      await update(
-        match.id,
-        MatchStatus.PLAYING,
-        getJoinInitialState(data.name, match)
-      )
-      navigate(`/games/${data.code}`)
-    },
-    [join, getJoinPlayerState, update, getJoinInitialState, navigate]
-  )
+  const { game, createMatch, joinGame } = useStartGame()
 
   return (
     <Container>
@@ -87,10 +27,6 @@ function StartGameContent() {
       <JoinGame onJoinGame={joinGame} />
     </Container>
   )
-}
-
-type NewGameFormValues = {
-  challenger: string
 }
 
 interface NewGameProps {
@@ -116,11 +52,6 @@ function NewGame({ onCreateGame }: NewGameProps) {
       </Button>
     </Form>
   )
-}
-
-type JoinGameFormValues = {
-  code: string
-  name: string
 }
 
 interface JoinGameProps {

@@ -1,11 +1,4 @@
-import { useCallback, useContext } from 'react'
-import { shallow } from 'zustand/shallow'
-import { useParams } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
-import useSwr from 'swr'
-import { AxiosError } from 'axios'
-import { toast } from 'react-toastify'
-import { pick } from 'lodash'
 import {
   Container,
   Title,
@@ -17,13 +10,13 @@ import {
   ErrorState,
   LoadingState
 } from '@play/components'
-import { ContainerContext } from '@play/context'
 import { TicTacToeMatch } from '@play/games/tictactoe'
-interface ConcretMatchProps {
+import { RestoreMatchForm, useMatch } from './match-hook'
+interface ConcreteMatchProps {
   slug: string
 }
 
-function ConcreteMatch({ slug }: ConcretMatchProps) {
+function ConcreteMatch({ slug }: ConcreteMatchProps) {
   switch (slug) {
     case 'tic-tac-toe':
       return <TicTacToeMatch />
@@ -32,23 +25,7 @@ function ConcreteMatch({ slug }: ConcretMatchProps) {
 }
 
 export function Match() {
-  const container = useContext(ContainerContext)
-
-  const { code = '' } = useParams()
-
-  const useMatchRootStore = container.resolve('useMatchRootStore')
-  const {
-    game,
-    pmp = '',
-    fetchByCode
-  } = useMatchRootStore(
-    (state) => pick(state, 'game', 'pmp', 'fetchByCode'),
-    shallow
-  )
-
-  const { error, isLoading } = useSwr('/fetchMatchByCode', () =>
-    fetchByCode(code)
-  )
+  const { error, isLoading, pmp, code, game, onRestoreMatch } = useMatch()
 
   if (error) {
     return (
@@ -63,7 +40,7 @@ export function Match() {
   }
 
   if (!pmp) {
-    return <RestoreMatch />
+    return <RestoreMatch onRestoreMatch={onRestoreMatch} />
   }
 
   return (
@@ -85,44 +62,11 @@ export function Match() {
   )
 }
 
-type RestoreMatchForm = {
-  pmp: string
-  name: string
+interface RestoreMatchProps {
+  onRestoreMatch: (data: RestoreMatchForm) => Promise<void>
 }
 
-function isAxiosError(error: any): error is AxiosError {
-  return 'response' in error
-}
-
-const RestoreMatch = () => {
-  const container = useContext(ContainerContext)
-
-  const { code = '' } = useParams()
-
-  // Get the Match Factory
-  const useMatchRootStore = container.resolve('useMatchRootStore')
-
-  const join = useMatchRootStore((state) => state.join)
-
-  const onRestoreMatch = useCallback(
-    async (data: RestoreMatchForm) => {
-      try {
-        await join(code, {
-          name: data.name,
-          state: {},
-          pmp: data.pmp
-        })
-      } catch (error) {
-        if (isAxiosError(error)) {
-          if (error.code === AxiosError.ERR_BAD_REQUEST) {
-            toast.error('Invalid name or pmp')
-          }
-        }
-      }
-    },
-    [code, join]
-  )
-
+const RestoreMatch = ({ onRestoreMatch }: RestoreMatchProps) => {
   const {
     register,
     handleSubmit,
