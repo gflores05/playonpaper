@@ -3,7 +3,7 @@ import { ToastContainer } from 'react-toastify'
 
 export default function Root() {
   return (
-    <div className="flex flex-col justify-center w-full mx-auto h-full">
+    <div className="flex flex-col pt-24 w-full mx-auto h-full">
       <ToastContainer />
       <div className="container mx-auto">
         <h1 className="text-3xl text-center font-bold underline">

@@ -1,5 +1,6 @@
 import cx from 'classnames'
 import { useBoard } from './board-hook'
+import { memo } from 'react'
 
 interface TicTacToeCellProps {
   value: string | null
@@ -8,7 +9,12 @@ interface TicTacToeCellProps {
   onMark: (x: number, y: number) => void
 }
 
-function TicTacToeCell({ value, x, y, onMark }: TicTacToeCellProps) {
+const TicTacToeCell = memo(function TicTacToeCell({
+  value,
+  x,
+  y,
+  onMark
+}: TicTacToeCellProps) {
   return (
     <div
       className={cx(
@@ -26,7 +32,7 @@ function TicTacToeCell({ value, x, y, onMark }: TicTacToeCellProps) {
       </button>
     </div>
   )
-}
+})
 
 export function TicTacToeBoard() {
   const { match, onMark } = useBoard()
